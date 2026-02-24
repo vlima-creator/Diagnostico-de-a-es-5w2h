@@ -3,180 +3,185 @@ import json
 import pandas as pd
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="5W2H", layout="wide")
+st.set_page_config(page_title="5W2H", layout="wide", initial_sidebar_state="expanded")
 
-# Carregar dados
-try:
-    with open("data/acoes.json", encoding="utf-8") as f:
-        dados = json.load(f)
-    acoes_banco = dados.get("acoes", [])
-    config = dados.get("config", {"peso_impacto": 10, "peso_esforco": 2})
-except:
-    st.error("Erro ao carregar dados")
-    st.stop()
+# Load data
+with open("data/acoes.json", encoding="utf-8") as f:
+    data = json.load(f)
 
-# Session state
-if "plano" not in st.session_state:
-    st.session_state.plano = []
+acoes = data["acoes"]
+config = data["config"]
 
-st.title("5W2H - Diagnóstico de Ações")
+# Init session
+if "plan" not in st.session_state:
+    st.session_state.plan = []
+
+# Title
+st.title("Diagnostico 5W2H")
 
 # Sidebar
 with st.sidebar:
-    st.header("Configuração")
-    cliente = st.text_input("Cliente")
-    data_reuniao = st.date_input("Data")
-    if st.button("Limpar"):
-        st.session_state.plano = []
+    st.header("Setup")
+    client = st.text_input("Client Name")
+    meeting_date = st.date_input("Meeting Date")
+    if st.button("Clear Plan"):
+        st.session_state.plan = []
         st.rerun()
 
-# Abas
-tab1, tab2, tab3 = st.tabs(["Captura", "Plano", "Análise"])
+# Main tabs
+tab1, tab2, tab3 = st.tabs(["Add Action", "Plan", "Analysis"])
 
-# TAB 1
+# TAB 1: Add Action
 with tab1:
-    st.header("Captura de Ações")
+    st.header("Add Action")
     
-    if not cliente:
-        st.info("Digite o cliente na barra lateral")
+    if not client:
+        st.warning("Enter client name in sidebar")
     else:
-        acao_nome = st.selectbox("Ação", [a.get("acao", "") for a in acoes_banco])
-        acao = next((a for a in acoes_banco if a.get("acao") == acao_nome), None)
+        action_list = [a["acao"] for a in acoes]
+        selected_action = st.selectbox("Select Action", action_list)
         
-        if acao:
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Categoria", acao.get("categoria", ""))
-            col2.metric("Impacto", acao.get("impacto_padrao", 0))
-            col3.metric("Esforço", acao.get("esforco_padrao", 0))
-            
-            st.write(f"**What:** {acao.get('what', '')}")
-            st.write(f"**Why:** {acao.get('why', '')}")
-            st.write(f"**Where:** {acao.get('where', '')}")
-            st.write(f"**How:** {acao.get('how', '')}")
-            st.write(f"**Indicadores:** {acao.get('indicadores', '')}")
-            
-            data_inicio = st.date_input("Início", key="d1")
-            duracao = st.number_input("Duração (dias)", value=acao.get("duracao_dias", 7), min_value=1, max_value=180)
-            impacto = st.number_input("Impacto", value=acao.get("impacto_padrao", 3), min_value=1, max_value=5)
-            esforco = st.number_input("Esforço", value=acao.get("esforco_padrao", 3), min_value=1, max_value=5)
-            responsavel = st.text_input("Responsável")
-            status = st.selectbox("Status", ["Planejado", "Em andamento", "Concluído"])
-            notas = st.text_area("Notas")
-            
-            if st.button("Adicionar"):
-                if responsavel:
-                    score = (impacto * config.get("peso_impacto", 10)) - (esforco * config.get("peso_esforco", 2))
-                    data_fim = datetime.combine(data_inicio, datetime.min.time()) + timedelta(days=duracao)
-                    
-                    if score >= 30:
-                        pri = "P0"
-                    elif score >= 20:
-                        pri = "P1"
-                    elif score >= 10:
-                        pri = "P2"
-                    elif score >= 0:
-                        pri = "P3"
-                    else:
-                        pri = "P4"
-                    
-                    st.session_state.plano.append({
-                        "acao": acao_nome,
-                        "categoria": acao.get("categoria", ""),
-                        "responsavel": responsavel,
-                        "data_inicio": data_inicio,
-                        "data_fim": data_fim.date(),
-                        "duracao": duracao,
-                        "impacto": impacto,
-                        "esforco": esforco,
-                        "score": score,
-                        "prioridade": pri,
-                        "status": status,
-                        "notas": notas,
-                        "what": acao.get("what", ""),
-                        "why": acao.get("why", ""),
-                        "where": acao.get("where", ""),
-                        "how": acao.get("how", ""),
-                        "indicadores": acao.get("indicadores", "")
-                    })
-                    st.success("Ação adicionada!")
-                    st.rerun()
-                else:
-                    st.error("Digite o responsável")
+        action_data = next(a for a in acoes if a["acao"] == selected_action)
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Category", action_data["categoria"])
+        col2.metric("Impact", action_data["impacto_padrao"])
+        col3.metric("Effort", action_data["esforco_padrao"])
+        
+        st.write("**What:** " + action_data["what"])
+        st.write("**Why:** " + action_data["why"])
+        st.write("**Where:** " + action_data["where"])
+        st.write("**How:** " + action_data["how"])
+        st.write("**Indicators:** " + action_data["indicadores"])
+        
+        st.divider()
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            start_date = st.date_input("Start Date", key="start")
+            duration = st.number_input("Duration (days)", value=7, min_value=1, max_value=180)
+            impact = st.number_input("Impact (1-5)", value=3, min_value=1, max_value=5)
+        
+        with col2:
+            effort = st.number_input("Effort (1-5)", value=3, min_value=1, max_value=5)
+            owner = st.text_input("Owner")
+            status = st.selectbox("Status", ["Planned", "Running", "Done"])
+        
+        notes = st.text_area("Notes")
+        
+        if st.button("Add", use_container_width=True):
+            if not owner:
+                st.error("Enter owner name")
+            else:
+                score = (impact * config["peso_impacto"]) - (effort * config["peso_esforco"])
+                end_date = datetime.combine(start_date, datetime.min.time()) + timedelta(days=duration)
+                
+                st.session_state.plan.append({
+                    "action": selected_action,
+                    "category": action_data["categoria"],
+                    "owner": owner,
+                    "start": start_date,
+                    "end": end_date.date(),
+                    "days": duration,
+                    "impact": impact,
+                    "effort": effort,
+                    "score": score,
+                    "status": status,
+                    "notes": notes,
+                    "what": action_data["what"],
+                    "why": action_data["why"],
+                    "where": action_data["where"],
+                    "how": action_data["how"],
+                    "indicators": action_data["indicadores"]
+                })
+                st.success("Added!")
+                st.rerun()
 
-# TAB 2
+# TAB 2: Plan
 with tab2:
-    st.header("Plano 5W2H")
+    st.header("5W2H Plan")
     
-    if not st.session_state.plano:
-        st.info("Nenhuma ação adicionada")
+    if not st.session_state.plan:
+        st.info("No actions added")
     else:
-        total = len(st.session_state.plano)
-        score_total = sum(a["score"] for a in st.session_state.plano)
-        score_medio = score_total / total if total > 0 else 0
+        n = len(st.session_state.plan)
+        total_score = sum(a["score"] for a in st.session_state.plan)
+        avg_score = total_score / n if n > 0 else 0
         
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Total", total)
-        col2.metric("Score Total", f"{score_total:.1f}")
-        col3.metric("Score Médio", f"{score_medio:.1f}")
-        col4.metric("Impacto", sum(a["impacto"] for a in st.session_state.plano))
+        col1.metric("Total", n)
+        col2.metric("Total Score", f"{total_score:.1f}")
+        col3.metric("Avg Score", f"{avg_score:.1f}")
+        col4.metric("Total Impact", sum(a["impact"] for a in st.session_state.plan))
         
-        df = pd.DataFrame([{
-            "ID": i+1,
-            "Ação": a["acao"],
-            "Categoria": a["categoria"],
-            "Responsável": a["responsavel"],
-            "Início": a["data_inicio"],
-            "Fim": a["data_fim"],
-            "Impacto": a["impacto"],
-            "Esforço": a["esforco"],
-            "Score": f"{a['score']:.1f}",
-            "Prioridade": a["prioridade"]
-        } for i, a in enumerate(st.session_state.plano)])
+        st.divider()
         
+        df_data = []
+        for i, a in enumerate(st.session_state.plan):
+            df_data.append({
+                "N": i+1,
+                "Action": a["action"],
+                "Category": a["category"],
+                "Owner": a["owner"],
+                "Start": str(a["start"]),
+                "End": str(a["end"]),
+                "Days": a["days"],
+                "Impact": a["impact"],
+                "Effort": a["effort"],
+                "Score": f"{a['score']:.1f}",
+                "Status": a["status"]
+            })
+        
+        df = pd.DataFrame(df_data)
         st.dataframe(df, use_container_width=True, hide_index=True)
         
-        st.write("---")
+        st.divider()
         
-        for i, a in enumerate(st.session_state.plano):
-            st.write(f"**{i+1}. {a['acao']}** ({a['prioridade']})")
+        for i, a in enumerate(st.session_state.plan):
+            st.write(f"**{i+1}. {a['action']}** (Score: {a['score']:.1f})")
+            st.write(f"Category: {a['category']} | Owner: {a['owner']} | Status: {a['status']}")
+            st.write(f"Start: {a['start']} | End: {a['end']} | Days: {a['days']}")
+            st.write(f"Impact: {a['impact']}/5 | Effort: {a['effort']}/5")
             st.write(f"What: {a['what']}")
             st.write(f"Why: {a['why']}")
             st.write(f"Where: {a['where']}")
             st.write(f"How: {a['how']}")
-            st.write(f"Responsável: {a['responsavel']} | Início: {a['data_inicio']} | Fim: {a['data_fim']}")
-            st.write(f"Impacto: {a['impacto']} | Esforço: {a['esforco']} | Score: {a['score']:.1f}")
-            if a['notas']:
-                st.write(f"Notas: {a['notas']}")
+            if a['notes']:
+                st.write(f"Notes: {a['notes']}")
             
-            if st.button(f"Remover {i+1}", key=f"r{i}"):
-                st.session_state.plano.pop(i)
+            if st.button(f"Delete {i+1}", key=f"del{i}"):
+                st.session_state.plan.pop(i)
                 st.rerun()
             
-            st.write("---")
+            st.divider()
 
-# TAB 3
+# TAB 3: Analysis
 with tab3:
-    st.header("Análise")
+    st.header("Analysis")
     
-    if st.session_state.plano:
-        cat = {}
-        for a in st.session_state.plano:
-            c = a["categoria"]
-            cat[c] = cat.get(c, 0) + 1
+    if not st.session_state.plan:
+        st.info("No actions")
+    else:
+        cat_dict = {}
+        for a in st.session_state.plan:
+            c = a["category"]
+            cat_dict[c] = cat_dict.get(c, 0) + 1
         
-        st.write("Categoria")
-        st.bar_chart(pd.DataFrame(list(cat.items()), columns=["Categoria", "Qtd"]).set_index("Categoria"))
+        st.write("By Category")
+        df_cat = pd.DataFrame(list(cat_dict.items()), columns=["Category", "Count"])
+        st.bar_chart(df_cat.set_index("Category"))
         
-        scores = [a["score"] for a in st.session_state.plano]
+        st.divider()
+        
+        scores = [a["score"] for a in st.session_state.plan]
         col1, col2, col3 = st.columns(3)
-        col1.metric("Score Max", f"{max(scores):.1f}")
-        col2.metric("Score Min", f"{min(scores):.1f}")
-        col3.metric("Score Médio", f"{sum(scores)/len(scores):.1f}")
+        col1.metric("Max Score", f"{max(scores):.1f}")
+        col2.metric("Min Score", f"{min(scores):.1f}")
+        col3.metric("Avg Score", f"{sum(scores)/len(scores):.1f}")
         
         st.write("Scores")
-        st.bar_chart(pd.DataFrame([{"Ação": a["acao"][:15], "Score": a["score"]} for a in st.session_state.plano]).set_index("Ação"))
-    else:
-        st.info("Nenhuma ação")
+        df_scores = pd.DataFrame([{"Action": a["action"][:20], "Score": a["score"]} for a in st.session_state.plan])
+        st.bar_chart(df_scores.set_index("Action"))
 
-st.write("---")
+st.divider()
 st.write("5W2H v1.0")
