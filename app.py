@@ -368,7 +368,7 @@ with tab2:
                 "Fim": acao["data_fim"].strftime("%d/%m/%Y"),
                 "Dias": acao["duracao_dias"],
                 "Impacto": acao["impacto"],
-                "Esforço": acao["esforço"],
+                "Esforço": acao["esforco"],
                 "Score": f"{acao['score']:.1f}",
                 "Prioridade": acao["prioridade"],
                 "Status": acao["status"]
@@ -414,7 +414,7 @@ with tab2:
                     with info_cols[1]:
                         st.write(f"**Custo:** R$ {acao['custo']:,.2f}")
                         st.write(f"**Impacto:** {acao['impacto']}/5")
-                        st.write(f"**Esforço:** {acao['esforço']}/5")
+                        st.write(f"**Esforço:** {acao['esforco']}/5")
                         st.write(f"**Score:** {acao['score']:.1f}")
                     
                     if acao["notas"]:
