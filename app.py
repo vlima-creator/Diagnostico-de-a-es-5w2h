@@ -7,7 +7,7 @@ import json
 import pandas as pd
 from datetime import datetime
 from utils.calculadora import Calculadora5W2H
-from utils.relatorio import GeradorRelatorio
+# from utils.relatorio import GeradorRelatorio  # Removido para compatibilidade
 
 # Configuração da página
 st.set_page_config(
@@ -28,9 +28,8 @@ def carregar_acoes():
     with open("data/acoes.json", "r", encoding="utf-8") as f:
         return json.load(f)
 
-# Inicializar calculadora e gerador
+# Inicializar calculadora
 calculadora = Calculadora5W2H()
-gerador_relatorio = GeradorRelatorio()
 
 # Carregar dados
 dados = carregar_acoes()
@@ -267,36 +266,22 @@ with tab4:
         if not cliente:
             st.warning("Digite o nome do cliente na barra lateral")
         else:
-            col1, col2 = st.columns(2)
+            # Gerar Excel
+            from utils.relatorio import GeradorRelatorio
+            gerador_relatorio = GeradorRelatorio()
             
-            with col1:
-                pdf_bytes = gerador_relatorio.gerar_pdf(
-                    cliente=cliente,
-                    acoes=st.session_state.plano,
-                    metricas=st.session_state.metricas,
-                    data_reuniao=datetime.combine(data_reuniao, datetime.min.time())
-                )
-                st.download_button(
-                    label="Baixar PDF",
-                    data=pdf_bytes,
-                    file_name=f"Plano_5W2H_{cliente}_{datetime.now().strftime('%d_%m_%Y')}.pdf",
-                    mime="application/pdf",
-                    use_container_width=True
-                )
-            
-            with col2:
-                excel_bytes = gerador_relatorio.gerar_excel(
-                    cliente=cliente,
-                    acoes=st.session_state.plano,
-                    metricas=st.session_state.metricas
-                )
-                st.download_button(
-                    label="Baixar Excel",
-                    data=excel_bytes,
-                    file_name=f"Plano_5W2H_{cliente}_{datetime.now().strftime('%d_%m_%Y')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
-                )
+            excel_bytes = gerador_relatorio.gerar_excel(
+                cliente=cliente,
+                acoes=st.session_state.plano,
+                metricas=st.session_state.metricas
+            )
+            st.download_button(
+                label="Baixar Excel",
+                data=excel_bytes,
+                file_name=f"Plano_5W2H_{cliente}_{datetime.now().strftime('%d_%m_%Y')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
             
             st.write("---")
             st.write("Pré-visualização do Relatório")
