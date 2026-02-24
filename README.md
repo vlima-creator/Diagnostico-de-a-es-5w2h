@@ -1,0 +1,1 @@
+# Diagnostico-de-a-es-5w2h
