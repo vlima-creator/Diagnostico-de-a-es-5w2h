@@ -22,38 +22,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS customizado
+# CSS customizado (simplificado para evitar conflitos de renderização)
 st.markdown("""
     <style>
-    .main {
-        padding: 2rem;
-    }
-    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
-        font-size: 1.1rem;
-        font-weight: 600;
-    }
-    .metric-card {
-        background-color: #f0f2f6;
-        padding: 1.5rem;
-        border-radius: 0.5rem;
-        margin: 0.5rem 0;
-    }
-    .success-box {
-        background-color: #d4edda;
-        border: 1px solid #c3e6cb;
-        color: #155724;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 1rem 0;
-    }
-    .info-box {
-        background-color: #d1ecf1;
-        border: 1px solid #bee5eb;
-        color: #0c5460;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 1rem 0;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -422,13 +394,15 @@ with tab2:
                         st.write(acao["notas"])
                 
                 # Botão para remover ação
-                if st.button(f"🗑️ Remover ação {idx}", key=f"remove_{idx}"):
-                    st.session_state.plano.pop(idx - 1)
-                    st.session_state.metricas = calculadora.calcular_metricas_plano(
-                        st.session_state.plano
-                    )
-                    st.success("✅ Ação removida!")
-                    st.rerun()
+                col_remove = st.columns([1, 4])[0]
+                with col_remove:
+                    if st.button(f"🗑️ Remover", key=f"remove_{idx}", use_container_width=True):
+                        st.session_state.plano.pop(idx - 1)
+                        st.session_state.metricas = calculadora.calcular_metricas_plano(
+                            st.session_state.plano
+                        )
+                        st.success("✅ Ação removida!")
+                        st.rerun()
 
 # ============ TAB 3: Análise ============
 with tab3:
@@ -610,9 +584,6 @@ with tab4:
 
 # Footer
 st.divider()
-st.markdown("""
-    <div style="text-align: center; color: #888; font-size: 0.9rem; margin-top: 2rem;">
-        <p>Diagnóstico de Ações 5W2H | Versão 1.0</p>
-        <p>Ferramenta para planejamento estratégico em reuniões de start com clientes</p>
-    </div>
-""", unsafe_allow_html=True)
+st.markdown("---")
+st.markdown("**Diagnóstico de Ações 5W2H** | Versão 1.0")
+st.markdown("Ferramenta para planejamento estratégico em reuniões de start com clientes")
